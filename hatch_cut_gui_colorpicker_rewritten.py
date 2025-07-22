@@ -85,7 +85,7 @@ if uploaded_file:
     with col_img2:
         st.image(overlay, caption="Detected Failures", channels="RGB", width=400)
 
-    with st.sidebar.expander("Advanced Settings"):
+with st.sidebar.expander("Advanced Settings"):
     sensitivity = st.slider("Color Sensitivity", min_value=10, max_value=100, value=40)
 
     st.subheader("Results")
