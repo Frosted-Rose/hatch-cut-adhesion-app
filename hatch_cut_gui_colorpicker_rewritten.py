@@ -6,7 +6,7 @@ import cv2
 from sklearn.cluster import KMeans
 
 st.set_page_config(layout="wide")
-st.title("Hatch Cut Adhesion Detector (Auto Color, 2-Class Picker)")
+st.title("Hatch Cut Adhesion Detector (Dual Color Auto-Detect)")
 
 uploaded_file = st.file_uploader("Upload hatch cut image", type=["png", "jpg", "jpeg"])
 
@@ -17,6 +17,34 @@ def get_two_main_colors(image_np):
     centers = kmeans.cluster_centers_.astype(int)
     return centers
 
+def get_astm_grade(pct):
+    if pct <= 0:
+        return "5B"
+    elif pct <= 5:
+        return "4B"
+    elif pct <= 15:
+        return "3B"
+    elif pct <= 35:
+        return "2B"
+    elif pct <= 65:
+        return "1B"
+    else:
+        return "0B"
+
+def get_iso_grade(pct):
+    if pct <= 0:
+        return "0"
+    elif pct <= 5:
+        return "1"
+    elif pct <= 15:
+        return "2"
+    elif pct <= 30:
+        return "3"
+    elif pct <= 65:
+        return "4"
+    else:
+        return "5"
+
 if uploaded_file:
     img = Image.open(uploaded_file).convert("RGB")
     img_np = np.array(img)
@@ -24,8 +52,11 @@ if uploaded_file:
     colors = get_two_main_colors(img_np)
 
     st.sidebar.header("Choose Coating Color")
-    color_labels = [f"Color 1: {colors[0]}", f"Color 2: {colors[1]}"]
-    selected_index = st.sidebar.radio("Select the color that represents the **coating**", [0, 1], format_func=lambda i: color_labels[i])
+    for i, color in enumerate(colors):
+        st.sidebar.markdown(f"**Color {i + 1}:**")
+        st.sidebar.markdown(f'<div style="width:100%%;height:30px;background-color:rgb({color[0]},{color[1]},{color[2]});border:1px solid #000;"></div>', unsafe_allow_html=True)
+
+    selected_index = st.sidebar.radio("Select the color that represents the **coating**", [0, 1], index=0)
     coating_color = colors[selected_index]
 
     st.sidebar.subheader("Grid Size")
@@ -58,36 +89,38 @@ if uploaded_file:
                 cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 255, 0), 1)
 
     fail_pct = (failure_count / total_cells) * 100
+    astm = get_astm_grade(fail_pct)
+    iso = get_iso_grade(fail_pct)
+
     st.image(overlay, caption="Detected Failures Overlay", channels="RGB")
-    st.write(f"**Adhesion Failure**: {fail_pct:.2f}%")
+    st.write(f"### **Adhesion Failure: {fail_pct:.2f}%**")
+    st.write(f"**ASTM D3359 Grade:** {astm}   **ISO 2409:2020 Class:** {iso}")
 
-    st.subheader("Grading")
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.markdown("### ASTM D3359")
-        st.markdown("""
-        | Rating | Description |
-        |--------|-------------|
-        | 5B     | 0% area removed |
-        | 4B     | < 5% area removed |
-        | 3B     | 5–15% area removed |
-        | 2B     | 15–35% area removed |
-        | 1B     | 35–65% area removed |
-        | 0B     | > 65% area removed |
-        """)
-
-    with col2:
-        st.markdown("### ISO 2409:2020")
-        st.markdown("""
-        | Class | Description |
-        |-------|-------------|
-        | 0     | 0% detached |
-        | 1     | < 5% detached |
-        | 2     | 5–15% detached |
-        | 3     | 15–30% detached |
-        | 4     | 30–65% detached |
-        | 5     | > 65% detached |
-        """)
+    with st.expander("Show Grading Table"):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("### ASTM D3359")
+            st.markdown("""
+            | Rating | Description |
+            |--------|-------------|
+            | 5B     | 0% area removed |
+            | 4B     | < 5% area removed |
+            | 3B     | 5–15% area removed |
+            | 2B     | 15–35% area removed |
+            | 1B     | 35–65% area removed |
+            | 0B     | > 65% area removed |
+            """)
+        with col2:
+            st.markdown("### ISO 2409:2020")
+            st.markdown("""
+            | Class | Description |
+            |-------|-------------|
+            | 0     | 0% detached |
+            | 1     | < 5% detached |
+            | 2     | 5–15% detached |
+            | 3     | 15–30% detached |
+            | 4     | 30–65% detached |
+            | 5     | > 65% detached |
+            """)
 else:
     st.info("Upload a hatch cut image to begin.")
