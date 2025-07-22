@@ -83,7 +83,7 @@ if uploaded_file:
     with col_img1:
         st.image(img, caption="Original Image", width=400)
     with col_img2:
-        st.image(overlay, caption="Detected Failures Overlay", channels="RGB", width=400)
+        st.image(overlay, caption="Detected Failures", channels="RGB", width=400)
 
     st.subheader("Results")
     st.write(f"**Failure Area:** {fail_percent:.2f}%")
