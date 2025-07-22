@@ -9,7 +9,7 @@ st.set_page_config(layout="wide")
 st.title("Hatch Cut Adhesion Analyzer")
 
 uploaded_file = st.file_uploader("Upload Hatch Cut Test Image", type=["png", "jpg", "jpeg"])
-grid_size = st.sidebar.slider("Grid Size", min_value=2, max_value=10, value=6)
+grid_size = st.sidebar.slider("Grid Size Selector", min_value=2, max_value=15, value=10)
 sensitivity = st.sidebar.slider("Color Sensitivity", min_value=10, max_value=100, value=40)
 
 if uploaded_file:
