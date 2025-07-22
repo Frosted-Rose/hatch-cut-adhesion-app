@@ -63,7 +63,7 @@ if uploaded_file:
     cols = st.sidebar.slider("Grid columns", 2, 20, 6)
     rows = st.sidebar.slider("Grid rows", 2, 20, 6)
 
-    st.image(img, caption="Original Image", use_column_width=True)
+    st.image(img, caption="Original Image", width=400)
 
     color_lower = np.clip(coating_color - 30, 0, 255)
     color_upper = np.clip(coating_color + 30, 0, 255)
@@ -84,7 +84,7 @@ if uploaded_file:
             ratio = cv2.countNonZero(cell) / cell.size
             if ratio < 0.5:
                 failure_count += 1
-                cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                cv2.rectangle(overlay, (x1, y1), (x2, y2), (255, 0, 0), 2)
             else:
                 cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 255, 0), 1)
 
