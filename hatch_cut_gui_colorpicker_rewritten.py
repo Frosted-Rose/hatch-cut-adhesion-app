@@ -5,17 +5,9 @@ from PIL import Image
 import numpy as np
 import cv2
 import io
-import base64
 
 st.set_page_config(layout="wide")
-st.title("Hatch Cut Adhesion Failure Detector with Grid Cell Analysis")
-
-def image_to_base64_url(img):
-    buffered = io.BytesIO()
-    img.save(buffered, format="PNG")
-    img_bytes = buffered.getvalue()
-    img_b64 = base64.b64encode(img_bytes).decode()
-    return f"data:image/png;base64,{img_b64}"
+st.title("Hatch Cut Adhesion Failure Detector with Custom Color and Grid Cell Analysis")
 
 uploaded_file = st.file_uploader("Upload hatch cut image", type=["png", "jpg", "jpeg"])
 
@@ -24,12 +16,10 @@ if uploaded_file is not None:
     img_np = np.array(img)
 
     st.subheader("Step 1: Click on the coating area to select coating color")
-    image_url = image_to_base64_url(img)
     canvas_result = st_canvas(
         fill_color="rgba(255, 0, 0, 0.3)",
         stroke_width=10,
         background_image=img,
-        background_image_url=image_url,
         update_streamlit=True,
         height=img_np.shape[0],
         width=img_np.shape[1],
