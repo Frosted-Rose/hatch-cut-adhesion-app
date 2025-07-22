@@ -14,36 +14,37 @@ if uploaded_file is not None:
     img = Image.open(uploaded_file).convert("RGB")
     img_np = np.array(img)
 
-    col_left, col_right = st.columns([1, 2])
-
-    with col_left:
-        st.image(img, caption="Original Image", use_column_width=True)
-
     with st.sidebar:
+        st.image(img, caption="Click to Pick Coating Color", use_column_width=True)
+        st.write("Click anywhere on the image above to select the coating color.")
+        canvas_result = st_canvas(
+            fill_color="rgba(255, 0, 0, 0.3)",
+            stroke_width=10,
+            background_image=img,
+            update_streamlit=True,
+            height=img_np.shape[0] // 4,
+            width=img_np.shape[1] // 4,
+            drawing_mode="point",
+            key="colorpicker",
+        )
+
         st.header("Grid Settings")
         cols = st.slider("Grid columns", min_value=2, max_value=20, value=6)
         rows = st.slider("Grid rows", min_value=2, max_value=20, value=6)
 
-    st.subheader("Step 1: Click on the coating area to select coating color")
-    canvas_result = st_canvas(
-        fill_color="rgba(255, 0, 0, 0.3)",
-        stroke_width=10,
-        background_image=img,
-        update_streamlit=True,
-        height=img_np.shape[0],
-        width=img_np.shape[1],
-        drawing_mode="point",
-        key="canvas",
-    )
+    col_left, col_right = st.columns([1, 2])
+    with col_left:
+        st.image(img, caption="Original Image", use_column_width=True)
 
     if canvas_result.json_data and canvas_result.json_data["objects"]:
         last_point = canvas_result.json_data["objects"][-1]
-        x, y = int(last_point["left"]), int(last_point["top"])
+        x = int(last_point["left"] * 4)
+        y = int(last_point["top"] * 4)
+
         if 0 <= y < img_np.shape[0] and 0 <= x < img_np.shape[1]:
             picked_color = img_np[y, x]
             st.success(f"Selected coating color: {picked_color.tolist()}")
 
-            st.subheader("Step 2: Detection Result")
             color_lower = np.clip(picked_color - 30, 0, 255)
             color_upper = np.clip(picked_color + 30, 0, 255)
 
@@ -71,12 +72,13 @@ if uploaded_file is not None:
 
             failure_pct = (failure_count / total_cells) * 100
 
-            st.write(f"Adhesion Failure by Grid Cell Count: **{failure_pct:.2f}%**")
-            col_right.image(overlay_img, channels="RGB", caption="Detected Failure Overlay")
+            with col_right:
+                st.image(overlay_img, channels="RGB", caption="Detected Failure Overlay")
+                st.write(f"**Adhesion Failure:** {failure_pct:.2f}% ({failure_count} of {total_cells} cells failed)")
 
             st.subheader("Grading")
-
             col1, col2 = st.columns(2)
+
             with col1:
                 st.markdown("### ASTM D3359 Grading")
                 st.markdown("""
@@ -102,10 +104,9 @@ if uploaded_file is not None:
                 | 4     | 30–65% detached |
                 | 5     | > 65% detached |
                 """)
-
         else:
             st.error("Clicked point is outside image bounds.")
     else:
-        st.warning("Please click on the coating area in the image above to begin analysis.")
+        st.warning("Please select a color by clicking on the image in the sidebar.")
 else:
     st.info("Upload an image to begin.")
