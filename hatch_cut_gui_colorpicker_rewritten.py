@@ -10,7 +10,8 @@ st.title("Hatch Cut Adhesion Analyzer")
 
 uploaded_file = st.file_uploader("Upload Hatch Cut Test Image", type=["png", "jpg", "jpeg"])
 grid_size = st.sidebar.slider("Grid Size Selector", min_value=2, max_value=15, value=10)
-
+with st.sidebar.expander("Advanced Settings"):
+        sensitivity = st.slider("Color Sensitivity", min_value=10, max_value=100, value=40)
 
 if uploaded_file:
     img = Image.open(uploaded_file).convert("RGB")
@@ -85,8 +86,6 @@ if uploaded_file:
     with col_img2:
         st.image(overlay, caption="Detected Failures", channels="RGB", width=400)
 
-    with st.sidebar.expander("Advanced Settings"):
-        sensitivity = st.slider("Color Sensitivity", min_value=10, max_value=100, value=40)
 
     st.subheader("Results")
     st.write(f"**Failure Area:** {fail_percent:.2f}%")
