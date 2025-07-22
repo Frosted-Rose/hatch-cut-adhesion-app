@@ -67,7 +67,7 @@ if uploaded_file:
     with col_img1:
         st.image(img, caption="Original Image", width=400)
     with col_img2:
-        st.image(overlay, caption="Detected Failures Overlay", channels="RGB", width=400)
+        st.image(overlay_img, caption="Detected Failures Overlay", channels="RGB", width=400)
 
     color_lower = np.clip(coating_color - 30, 0, 255)
     color_upper = np.clip(coating_color + 30, 0, 255)
