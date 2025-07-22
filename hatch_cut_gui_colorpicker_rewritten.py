@@ -1,3 +1,4 @@
+
 import streamlit as st
 import cv2
 import numpy as np
@@ -8,7 +9,8 @@ st.set_page_config(layout="wide")
 st.title("Hatch Cut Adhesion Analyzer")
 
 uploaded_file = st.file_uploader("Upload Hatch Cut Test Image", type=["png", "jpg", "jpeg"])
-grid_size = st.sidebar.slider("Grid Size Selector", min_value=2, max_value=15, value=6)
+grid_size = st.sidebar.slider("Grid Size", min_value=2, max_value=10, value=6)
+sensitivity = st.sidebar.slider("Color Sensitivity", min_value=10, max_value=100, value=40)
 
 if uploaded_file:
     img = Image.open(uploaded_file).convert("RGB")
@@ -34,8 +36,8 @@ if uploaded_file:
         st.sidebar.image(swatch, caption=f"Color {i+1}")
 
     # Color thresholding
-    lower = np.clip(selected_color - 40, 0, 255)
-    upper = np.clip(selected_color + 40, 0, 255)
+    lower = np.clip(selected_color - sensitivity, 0, 255)
+    upper = np.clip(selected_color + sensitivity, 0, 255)
     mask = cv2.inRange(img_np, lower, upper)
 
     # Analyze grid
