@@ -4,11 +4,19 @@ from streamlit_drawable_canvas import st_canvas
 from PIL import Image
 import numpy as np
 import cv2
+import io
+import base64
 
 st.set_page_config(layout="wide")
-st.title("Hatch Cut Adhesion Failure Detector")
+st.title("Hatch Cut Adhesion Failure Detector with Grid Cell Analysis")
 
-# Upload image
+def image_to_base64_url(img):
+    buffered = io.BytesIO()
+    img.save(buffered, format="PNG")
+    img_bytes = buffered.getvalue()
+    img_b64 = base64.b64encode(img_bytes).decode()
+    return f"data:image/png;base64,{img_b64}"
+
 uploaded_file = st.file_uploader("Upload hatch cut image", type=["png", "jpg", "jpeg"])
 
 if uploaded_file is not None:
@@ -16,10 +24,12 @@ if uploaded_file is not None:
     img_np = np.array(img)
 
     st.subheader("Step 1: Click on the coating area to select coating color")
+    image_url = image_to_base64_url(img)
     canvas_result = st_canvas(
         fill_color="rgba(255, 0, 0, 0.3)",
         stroke_width=10,
         background_image=img,
+        background_image_url=image_url,
         update_streamlit=True,
         height=img_np.shape[0],
         width=img_np.shape[1],
@@ -34,22 +44,40 @@ if uploaded_file is not None:
             picked_color = img_np[y, x]
             st.success(f"Selected coating color: {picked_color.tolist()}")
 
-            # Process the image to detect non-coating areas
-            st.subheader("Step 2: Detection Result")
+            st.subheader("Step 2: Set Grid Size")
+            cols = st.number_input("Number of columns", min_value=2, max_value=20, value=6)
+            rows = st.number_input("Number of rows", min_value=2, max_value=20, value=6)
+
+            st.subheader("Step 3: Detection Result")
             color_lower = np.clip(picked_color - 30, 0, 255)
             color_upper = np.clip(picked_color + 30, 0, 255)
 
             mask = cv2.inRange(img_np, color_lower, color_upper)
-            coating_area = cv2.countNonZero(mask)
-            total_area = img_np.shape[0] * img_np.shape[1]
-            failure_area = total_area - coating_area
-            failure_pct = (failure_area / total_area) * 100
 
-            st.write(f"Adhesion Failure Area: {failure_pct:.2f}%")
+            h, w = img_np.shape[:2]
+            cell_h, cell_w = h // rows, w // cols
 
-            result_img = cv2.cvtColor(img_np.copy(), cv2.COLOR_RGB2BGR)
-            result_img[mask == 0] = [0, 0, 255]  # Highlight failure in red
-            st.image(result_img, channels="BGR", caption="Detected Failures Highlighted in Red")
+            failure_count = 0
+            total_cells = rows * cols
+            overlay_img = img_np.copy()
+
+            for i in range(rows):
+                for j in range(cols):
+                    y1, y2 = i * cell_h, (i + 1) * cell_h
+                    x1, x2 = j * cell_w, (j + 1) * cell_w
+                    cell_mask = mask[y1:y2, x1:x2]
+                    cell_area = cell_mask.size
+                    coated_area = cv2.countNonZero(cell_mask)
+                    if coated_area / cell_area < 0.5:
+                        failure_count += 1
+                        cv2.rectangle(overlay_img, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                    else:
+                        cv2.rectangle(overlay_img, (x1, y1), (x2, y2), (0, 255, 0), 1)
+
+            failure_pct = (failure_count / total_cells) * 100
+            st.write(f"Adhesion Failure by Grid Cell Count: {failure_pct:.2f}% ({failure_count} of {total_cells} cells failed)")
+
+            st.image(overlay_img, channels="RGB", caption="Grid Cell Analysis")
         else:
             st.error("Clicked point is outside image bounds.")
     else:
