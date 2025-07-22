@@ -89,4 +89,5 @@ if uploaded_file:
     st.write(f"**Failure Area:** {fail_percent:.2f}%")
     st.write(f"**ASTM Grade (D3359):** {astm_grade(fail_percent)}")
     st.write(f"**ISO Grade (2409):** {iso_grade(fail_percent)}")
+    st.divider()
     st.write(":rainbow[BOB was here]")
