@@ -6,46 +6,31 @@ import cv2
 from sklearn.cluster import KMeans
 
 st.set_page_config(layout="wide")
-st.title("Hatch Cut Adhesion Failure Detector with Auto Color Detection")
+st.title("Hatch Cut Adhesion Detector (Auto Color, 2-Class Picker)")
 
 uploaded_file = st.file_uploader("Upload hatch cut image", type=["png", "jpg", "jpeg"])
 
-def get_dominant_color(image, k=3):
-    img_small = cv2.resize(image, (64, 64))  # Reduce size for speed
-    img_flat = img_small.reshape((-1, 3))
-    kmeans = KMeans(n_clusters=k, random_state=42).fit(img_flat)
-    cluster_centers = kmeans.cluster_centers_.astype(int)
-    counts = np.bincount(kmeans.labels_)
-    dominant_color = cluster_centers[np.argmax(counts)]
-    return dominant_color
+def get_two_main_colors(image_np):
+    img_small = cv2.resize(image_np, (64, 64))
+    data = img_small.reshape((-1, 3))
+    kmeans = KMeans(n_clusters=2, random_state=42).fit(data)
+    centers = kmeans.cluster_centers_.astype(int)
+    return centers
 
-standard_colors = {
-    "Green": np.array([0, 128, 0]),
-    "Red": np.array([200, 0, 0]),
-    "Blue": np.array([0, 0, 200]),
-    "Gray": np.array([128, 128, 128]),
-    "White": np.array([255, 255, 255]),
-    "Yellow": np.array([200, 200, 0]),
-}
-
-if uploaded_file is not None:
+if uploaded_file:
     img = Image.open(uploaded_file).convert("RGB")
     img_np = np.array(img)
-    dominant_color = get_dominant_color(img_np)
-    st.sidebar.subheader("Detected coating color")
-    st.sidebar.color_picker("Auto Detected (shown only)", value="#{:02x}{:02x}{:02x}".format(*dominant_color), label_visibility="collapsed")
 
-    use_manual = st.sidebar.checkbox("Override with standard color")
+    colors = get_two_main_colors(img_np)
 
-    if use_manual:
-        selected_color_name = st.sidebar.selectbox("Choose standard color", list(standard_colors.keys()))
-        coating_color = standard_colors[selected_color_name]
-    else:
-        coating_color = dominant_color
+    st.sidebar.header("Choose Coating Color")
+    color_labels = [f"Color 1: {colors[0]}", f"Color 2: {colors[1]}"]
+    selected_index = st.sidebar.radio("Select the color that represents the **coating**", [0, 1], format_func=lambda i: color_labels[i])
+    coating_color = colors[selected_index]
 
-    st.sidebar.header("Grid Settings")
-    cols = st.sidebar.slider("Grid columns", min_value=2, max_value=20, value=6)
-    rows = st.sidebar.slider("Grid rows", min_value=2, max_value=20, value=6)
+    st.sidebar.subheader("Grid Size")
+    cols = st.sidebar.slider("Grid columns", 2, 20, 6)
+    rows = st.sidebar.slider("Grid rows", 2, 20, 6)
 
     st.image(img, caption="Original Image", use_column_width=True)
 
@@ -58,30 +43,29 @@ if uploaded_file is not None:
 
     failure_count = 0
     total_cells = rows * cols
-    overlay_img = img_np.copy()
+    overlay = img_np.copy()
 
     for i in range(rows):
         for j in range(cols):
             y1, y2 = i * cell_h, (i + 1) * cell_h
             x1, x2 = j * cell_w, (j + 1) * cell_w
-            cell_mask = mask[y1:y2, x1:x2]
-            cell_area = cell_mask.size
-            coated_area = cv2.countNonZero(cell_mask)
-            if coated_area / cell_area < 0.5:
+            cell = mask[y1:y2, x1:x2]
+            ratio = cv2.countNonZero(cell) / cell.size
+            if ratio < 0.5:
                 failure_count += 1
-                cv2.rectangle(overlay_img, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 0, 255), 2)
             else:
-                cv2.rectangle(overlay_img, (x1, y1), (x2, y2), (0, 255, 0), 1)
+                cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 255, 0), 1)
 
-    failure_pct = (failure_count / total_cells) * 100
-    st.image(overlay_img, channels="RGB", caption="Detected Failure Overlay")
-    st.write(f"**Adhesion Failure:** {failure_pct:.2f}% ({failure_count} of {total_cells} cells failed)")
+    fail_pct = (failure_count / total_cells) * 100
+    st.image(overlay, caption="Detected Failures Overlay", channels="RGB")
+    st.write(f"**Adhesion Failure**: {fail_pct:.2f}%")
 
     st.subheader("Grading")
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown("### ASTM D3359 Grading")
+        st.markdown("### ASTM D3359")
         st.markdown("""
         | Rating | Description |
         |--------|-------------|
@@ -94,7 +78,7 @@ if uploaded_file is not None:
         """)
 
     with col2:
-        st.markdown("### ISO 2409:2020 Grading")
+        st.markdown("### ISO 2409:2020")
         st.markdown("""
         | Class | Description |
         |-------|-------------|
@@ -106,4 +90,4 @@ if uploaded_file is not None:
         | 5     | > 65% detached |
         """)
 else:
-    st.info("Upload an image to begin.")
+    st.info("Upload a hatch cut image to begin.")
