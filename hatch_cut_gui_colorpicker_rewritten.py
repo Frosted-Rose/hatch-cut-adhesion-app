@@ -63,7 +63,11 @@ if uploaded_file:
     cols = st.sidebar.slider("Grid columns", 2, 20, 6)
     rows = st.sidebar.slider("Grid rows", 2, 20, 6)
 
-    st.image(img, caption="Original Image", width=400)
+    col_img1, col_img2 = st.columns(2)
+    with col_img1:
+        st.image(img, caption="Original Image", width=400)
+    with col_img2:
+        st.image(overlay, caption="Detected Failures Overlay", channels="RGB", width=400)
 
     color_lower = np.clip(coating_color - 30, 0, 255)
     color_upper = np.clip(coating_color + 30, 0, 255)
@@ -92,7 +96,7 @@ if uploaded_file:
     astm = get_astm_grade(fail_pct)
     iso = get_iso_grade(fail_pct)
 
-    st.image(overlay, caption="Detected Failures Overlay", channels="RGB")
+    
     st.write(f"### **Adhesion Failure: {fail_pct:.2f}%**")
     st.write(f"**ASTM D3359 Grade:** {astm}   **ISO 2409:2020 Class:** {iso}")
 
