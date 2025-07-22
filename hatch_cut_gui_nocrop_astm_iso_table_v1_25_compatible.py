@@ -97,9 +97,9 @@ if uploaded_file:
     st.markdown(f"**📘 ISO 2409 Classification: {get_iso_grade(failure_pct)}**")
 
     col1, col2, col3 = st.columns(3)
-    col1.image(img, caption="Uploaded Image")
-    col2.image(failure_mask, caption="Failure Mask", channels="GRAY")
-    col3.image(overlay, caption="Failed Cells Overlay")
+    col1.image(img, caption="Uploaded Image", use_container_width=True)
+    col2.image(failure_mask, caption="Failure Mask", use_container_width=True, channels="GRAY")
+    col3.image(overlay, caption="Failed Cells Overlay", use_container_width=True)
 
     st.markdown("""
     ---
