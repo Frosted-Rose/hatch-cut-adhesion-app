@@ -19,7 +19,7 @@ def add_bg_from_local(image_file):
     css = f"""
     <style>
     .stApp {{
-        background: linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)),
+        background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)),
                     url("data:image/png;base64,{encoded}");
         background-size: 50%;
         background-repeat: no-repeat;
