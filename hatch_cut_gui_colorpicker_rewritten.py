@@ -35,7 +35,7 @@ add_bg_from_local("background.png")
 # === Upload and settings ===
 st.sidebar.title("Settings")
 uploaded_files = st.file_uploader("Upload one or more Hatch Cut Test Images", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
-grid_size = st.sidebar.slider("Grid Size Selector (Adjust based on number of rows/columnns)", 2, 40, 10)
+grid_size = st.sidebar.slider("Grid Size Selector", 2, 10, 10)
 with st.sidebar.expander("Advanced Settings"):
     sensitivity = st.slider("Color Sensitivity", 10, 100, 40)
 
