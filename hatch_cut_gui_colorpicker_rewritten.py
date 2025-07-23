@@ -10,7 +10,7 @@ import xlsxwriter
 
 # Set layout and title
 st.set_page_config(layout="wide")
-st.title("Hatch Cut Adhesion Analyzer (Batch Mode)")
+st.title("Hatch Cut Adhesion Analyzer")
 
 # === Background Image ===
 def add_bg_from_local(image_file):
