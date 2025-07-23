@@ -17,16 +17,27 @@ def add_bg_from_local(image_file):
     <style>
     .stApp {{
         background-image: url("data:image/png;base64,{encoded}");
-        background-size: cover;
-        background-position: center;
+        background-size: 50%;           /* Half the size */
         background-repeat: no-repeat;
+        background-position: center;
         background-attachment: fixed;
+    }}
+    .stApp::before {{
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.5); /* 50% transparent white overlay */
+        z-index: -1;
     }}
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
 
-add_bg_from_local("background.png")  # Make sure this file exists
+
+add_bg_from_local("background.png") 
 
 # === File Upload and Settings ===
 uploaded_file = st.file_uploader("Please Upload Hatch Cut Test Image", type=["png", "jpg", "jpeg"])
