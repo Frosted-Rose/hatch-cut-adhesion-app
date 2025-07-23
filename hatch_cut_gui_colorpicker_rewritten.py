@@ -31,7 +31,7 @@ st.divider()
 #    """
 #    st.markdown(css, unsafe_allow_html=True)
 
-add_bg_from_local("background.png")
+# add_bg_from_local("background.png")
 
 # === Upload and settings ===
 st.sidebar.title("Settings")
