@@ -16,20 +16,13 @@ def add_bg_from_local(image_file):
 
     css = f"""
     <style>
-    .stApp::after {{
-        content: "";
-        background-image: url("data:image/png;base64,{encoded}");
+    .stApp {{
+        background: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)),
+                    url("data:image/png;base64,{encoded}");
         background-size: 50%;
         background-repeat: no-repeat;
         background-position: center;
         background-attachment: fixed;
-        opacity: 1;  /* 50% transparent */
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
     }}
     </style>
     """
