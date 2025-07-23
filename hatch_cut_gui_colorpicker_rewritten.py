@@ -14,23 +14,23 @@ st.title("Hatch Cut Adhesion Analyzer")
 st.divider()
 
 # === Background Image ===
+# Uncomment and place a background.png file if you want background
 # def add_bg_from_local(image_file):
- #   with open(image_file, "rb") as f:
-  #      encoded = base64.b64encode(f.read()).decode()
-   # css = f"""
-   # <style>
-    #.stApp {{
-     #   background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)),
-      #              url("data:image/png;base64,{encoded}");
-       # background-size: 50%;
-        #background-repeat: no-repeat;
-        #background-position: center;
-        #background-attachment: fixed;
-   # }}
-  #  </style>
-#    """
-#    st.markdown(css, unsafe_allow_html=True)
-
+#     with open(image_file, "rb") as f:
+#         encoded = base64.b64encode(f.read()).decode()
+#     css = f"""
+#     <style>
+#     .stApp {{
+#         background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)),
+#                     url("data:image/png;base64,{encoded}");
+#         background-size: 50%;
+#         background-repeat: no-repeat;
+#         background-position: center;
+#         background-attachment: fixed;
+#     }}
+#     </style>
+#     """
+#     st.markdown(css, unsafe_allow_html=True)
 # add_bg_from_local("background.png")
 
 # === Upload and settings ===
@@ -72,8 +72,23 @@ if uploaded_files:
         kmeans = KMeans(n_clusters=2, random_state=42).fit(reshaped)
         colors = np.uint8(kmeans.cluster_centers_)
 
-        # Let user pick dominant coating color (default 0)
-        selected_color = colors[0]
+        # Show coating color selection in sidebar
+        st.sidebar.subheader(f"{file.name} - Detected Colors")
+        color_index = st.sidebar.radio(
+            f"Select Coating Color for {file.name}",
+            options=[0, 1],
+            index=0,
+            format_func=lambda i: f"Color {i+1} - RGB: {tuple(colors[i])}",
+            key=file.name
+        )
+        selected_color = colors[color_index]
+
+        # Show swatches
+        for i in range(2):
+            swatch = np.full((50, 50, 3), colors[i], dtype=np.uint8)
+            st.sidebar.image(swatch, caption=f"{file.name} - Color {i+1}", width=50)
+
+        # Color thresholding
         lower = np.clip(selected_color - sensitivity, 0, 255)
         upper = np.clip(selected_color + sensitivity, 0, 255)
         mask = cv2.inRange(img_np, lower, upper)
@@ -131,20 +146,20 @@ if uploaded_files:
         workbook = writer.book
         worksheet = writer.sheets["Results"]
 
-        # Add header and formatting
+        # Add header formatting
         header_format = workbook.add_format({'bold': True, 'bg_color': '#F0F0F0'})
         for col_num, value in enumerate(df.columns):
             worksheet.write(0, col_num, value, header_format)
             worksheet.set_column(col_num, col_num, 20)
 
-        # Add images
+        # Add thumbnails
         for row_num, file in enumerate(uploaded_files, start=1):
             image_data = image_thumbnails[file.name]
             image_io = io.BytesIO(image_data)
             worksheet.insert_image(row_num, len(df.columns), file.name, {'image_data': image_io, 'x_scale': 0.5, 'y_scale': 0.5})
 
     st.download_button(
-        label=":ramen: Download Results (Excel)",
+        label="📥 Download Results (Excel)",
         data=output.getvalue(),
         file_name="hatch_cut_results.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
