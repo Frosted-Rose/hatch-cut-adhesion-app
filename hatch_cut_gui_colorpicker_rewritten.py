@@ -149,3 +149,5 @@ if uploaded_files:
     )
 
     st.success("Batch analysis complete.")
+    st.divider()
+    st.write("Bob was here")
