@@ -142,7 +142,7 @@ if uploaded_files:
             worksheet.insert_image(row_num, len(df.columns), file.name, {'image_data': image_io, 'x_scale': 0.5, 'y_scale': 0.5})
 
     st.download_button(
-        label="📥 Download Results (Excel)",
+        label=":ramen: Download Results (Excel)",
         data=output.getvalue(),
         file_name="hatch_cut_results.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
