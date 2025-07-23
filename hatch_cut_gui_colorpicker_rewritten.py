@@ -104,3 +104,14 @@ if uploaded_file:
     # Display images
     col_img1, col_img2 = st.columns(2)
     with col_img1:
+        st.image(img, caption="Original Image", width=400)
+    with col_img2:
+        st.image(overlay, caption="Detected Failures", channels="RGB", width=400)
+
+    # Results
+    st.subheader("Results")
+    st.write(f"**Failure Area:** {fail_percent:.2f}%")
+    st.write(f"**ASTM Grade (D3359):** {astm_grade(fail_percent)}")
+    st.write(f"**ISO Grade (2409):** {iso_grade(fail_percent)}")
+    st.divider()
+    st.write(":rainbow[BOB was here]")
