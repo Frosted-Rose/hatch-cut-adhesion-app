@@ -4,25 +4,6 @@ import cv2
 import numpy as np
 from PIL import Image
 from sklearn.cluster import KMeans
-import base64
-
-def add_bg_from_local(image_file):
-    with open(image_file, "rb") as f:
-        encoded = base64.b64encode(f.read()).decode()
-    css = f"""
-    <style>
-    .stApp {{
-        background-image: url("data:image/jpg;base64,{encoded}");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-    }}
-    </style>
-    """
-    st.markdown(css, unsafe_allow_html=True)
-
-add_bg_from_local("background.png")
 
 st.set_page_config(layout="wide")
 st.title("Hatch Cut Adhesion Analyzer")
