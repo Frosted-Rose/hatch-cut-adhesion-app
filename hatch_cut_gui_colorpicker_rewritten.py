@@ -13,23 +13,22 @@ st.title("Hatch Cut Adhesion Analyzer")
 def add_bg_from_local(image_file):
     with open(image_file, "rb") as f:
         encoded = base64.b64encode(f.read()).decode()
+
     css = f"""
     <style>
-    .stApp {{
+    .stApp::after {{
+        content: "";
         background-image: url("data:image/png;base64,{encoded}");
-        background-size: 50%;           /* Half the size */
+        background-size: 50%;
         background-repeat: no-repeat;
         background-position: center;
         background-attachment: fixed;
-    }}
-    .stApp::before {{
-        content: "";
+        opacity: 0.5;  /* 50% transparent */
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.8); /* 50% transparent white overlay */
         z-index: -1;
     }}
     </style>
