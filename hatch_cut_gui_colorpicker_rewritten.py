@@ -11,6 +11,7 @@ import xlsxwriter
 # Set layout and title
 st.set_page_config(layout="wide")
 st.title("Hatch Cut Adhesion Analyzer")
+st.divider()
 
 # === Background Image ===
 def add_bg_from_local(image_file):
@@ -34,6 +35,7 @@ add_bg_from_local("background.png")
 
 # === Upload and settings ===
 st.sidebar.title("Settings")
+st.divider()
 uploaded_files = st.file_uploader("Upload one or more Hatch Cut Test Images", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
 grid_size = st.sidebar.slider("Grid Size Selector", 2, 10, 10)
 with st.sidebar.expander("Advanced Settings"):
