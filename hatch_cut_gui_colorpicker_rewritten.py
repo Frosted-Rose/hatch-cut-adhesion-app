@@ -1,18 +1,40 @@
-
-import streamlit as st
+import streamlit as st 
 import cv2
 import numpy as np
 from PIL import Image
 from sklearn.cluster import KMeans
+import base64
 
+# Set page layout
 st.set_page_config(layout="wide")
 st.title("Hatch Cut Adhesion Analyzer")
 
+# === Background Image ===
+def add_bg_from_local(image_file):
+    with open(image_file, "rb") as f:
+        encoded = base64.b64encode(f.read()).decode()
+    css = f"""
+    <style>
+    .stApp {{
+        background-image: url("data:image/png;base64,{encoded}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }}
+    </style>
+    """
+    st.markdown(css, unsafe_allow_html=True)
+
+add_bg_from_local("background.png")  # Make sure this file exists
+
+# === File Upload and Settings ===
 uploaded_file = st.file_uploader("Please Upload Hatch Cut Test Image", type=["png", "jpg", "jpeg"])
 grid_size = st.sidebar.slider("Grid Size Selector (Adjust based on number of rows/columnns)", min_value=2, max_value=15, value=10)
 with st.sidebar.expander("Advanced Settings"):
-        sensitivity = st.slider("Color Sensitivity", min_value=10, max_value=100, value=40)
+    sensitivity = st.slider("Color Sensitivity", min_value=10, max_value=100, value=40)
 
+# === Image Analysis ===
 if uploaded_file:
     img = Image.open(uploaded_file).convert("RGB")
     img_np = np.array(img)
@@ -31,7 +53,6 @@ if uploaded_file:
     )
     selected_color = colors[color_index]
 
-    # Show swatches
     for i in range(2):
         swatch = np.full((50, 50, 3), colors[i], dtype=np.uint8)
         st.sidebar.image(swatch, caption=f"Color {i+1}")
@@ -80,16 +101,6 @@ if uploaded_file:
         elif failure < 85: return "4"
         else: return "5"
 
+    # Display images
     col_img1, col_img2 = st.columns(2)
     with col_img1:
-        st.image(img, caption="Original Image", width=400)
-    with col_img2:
-        st.image(overlay, caption="Detected Failures", channels="RGB", width=400)
-
-
-    st.subheader("Results")
-    st.write(f"**Failure Area:** {fail_percent:.2f}%")
-    st.write(f"**ASTM Grade (D3359):** {astm_grade(fail_percent)}")
-    st.write(f"**ISO Grade (2409):** {iso_grade(fail_percent)}")
-    st.divider()
-    st.write(":rainbow[BOB was here]")
