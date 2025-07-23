@@ -150,6 +150,6 @@ if uploaded_files:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-    st.success("Batch analysis complete.")
+    st.success("Analysis complete.")
     st.divider()
     st.write("Bob was here")
