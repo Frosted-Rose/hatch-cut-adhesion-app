@@ -23,7 +23,7 @@ def add_bg_from_local(image_file):
         background-repeat: no-repeat;
         background-position: center;
         background-attachment: fixed;
-        opacity: 0.5;  /* 50% transparent */
+        opacity: 1;  /* 50% transparent */
         position: fixed;
         top: 0;
         left: 0;
