@@ -174,4 +174,4 @@ if uploaded_files:
 
     st.success("Analysis complete.")
     st.divider()
-    st.caption(":Bob Was Here")
+    st.caption("Bob Was Here")
