@@ -14,7 +14,7 @@ st.title("Hatch Cut Adhesion Analyzer")
 st.divider()
 
 # === Background Image ===
-def add_bg_from_local(image_file):
+## def add_bg_from_local(image_file):
     with open(image_file, "rb") as f:
         encoded = base64.b64encode(f.read()).decode()
     css = f"""
