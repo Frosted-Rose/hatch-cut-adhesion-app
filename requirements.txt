@@ -4,3 +4,4 @@ numpy
 Pillow
 streamlit-drawable-canvas
 scikit-learn
+xlsxwriter>=3.1.2
