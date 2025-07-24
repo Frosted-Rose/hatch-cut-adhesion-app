@@ -25,7 +25,8 @@ def add_bg_from_local(image_file):
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
- add_bg_from_local("background.png")
+
+add_bg_from_local("background.png")
 
 # === Page config ===
 st.set_page_config(layout="wide")
