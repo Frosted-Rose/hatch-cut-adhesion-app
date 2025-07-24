@@ -12,6 +12,7 @@ import xlsxwriter
 def add_bg_from_local(image_file):
     with open(image_file, "rb") as f:
         encoded = base64.b64encode(f.read()).decode()
+    
     css = f"""
     <style>
     .stApp {{
@@ -26,6 +27,7 @@ def add_bg_from_local(image_file):
     """
     st.markdown(css, unsafe_allow_html=True)
 
+# Call the function
 add_bg_from_local("background.png")
 
 # === Page config ===
