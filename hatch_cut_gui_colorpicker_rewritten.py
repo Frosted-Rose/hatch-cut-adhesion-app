@@ -12,7 +12,7 @@ import xlsxwriter
 
 # === Page config ===
 st.set_page_config(layout="wide")
-st.title("Hatch Cut Adhesion Analyzer (Hi YK)")
+st.title("Hatch Cut Adhesion Analyzer")
 st.divider()
 
 # === Sidebar Settings ===
