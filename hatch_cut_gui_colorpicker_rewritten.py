@@ -47,7 +47,6 @@ def iso_grade(failure_pct: float) -> str:
 @st.cache_data(show_spinner=False)
 def kmeans_colors(img_np: np.ndarray, n_clusters: int = 2, sample_px: int = 40000, seed: int = 42):
     """Return KMeans cluster centers (RGB) from a random pixel sample for speed."""
-    h, w, _ = img_np.shape
     flat = img_np.reshape(-1, 3)
     if sample_px and sample_px < flat.shape[0]:
         idx = np.random.RandomState(seed).choice(flat.shape[0], size=sample_px, replace=False)
@@ -88,22 +87,21 @@ def analyze_grid(mask: np.ndarray, grid_size: int, fail_threshold: float = 0.5):
 
 def draw_overlay(img_np: np.ndarray, failure_cells, grid_size: int, alpha: float = 0.35, show_grid: bool = True):
     overlay = img_np.copy()
-    # Red rectangles for failed cells
+    # Red rectangles for failed cells (filled)
     for (x1, y1, x2, y2) in failure_cells:
-        cv2.rectangle(overlay, (x1, y1), (x2, y2), (255, 0, 0), thickness=-1)  # filled red
+        cv2.rectangle(overlay, (x1, y1), (x2, y2), (255, 0, 0), thickness=-1)
     blended = cv2.addWeighted(overlay, alpha, img_np, 1 - alpha, 0)
 
-    # Optional grid lines
     if show_grid:
         H, W, _ = img_np.shape
         cell_h = H // grid_size
         cell_w = W // grid_size
         grid_img = blended.copy()
-        # vertical
+        # vertical lines
         for j in range(1, grid_size):
             x = j * cell_w
             cv2.line(grid_img, (x, 0), (x, H), (0, 0, 0), 1)
-        # horizontal
+        # horizontal lines
         for i in range(1, grid_size):
             y = i * cell_h
             cv2.line(grid_img, (0, y), (W, y), (0, 0, 0), 1)
@@ -120,7 +118,6 @@ def to_thumbnail(pil_img: Image.Image, max_side=220) -> bytes:
 def create_excel_report(df: pd.DataFrame, thumb_map: dict, overlay_map: dict) -> bytes:
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-        # Results sheet
         df.to_excel(writer, index=False, sheet_name="Results", startrow=4)
         wb = writer.book
         ws = writer.sheets["Results"]
@@ -137,7 +134,7 @@ def create_excel_report(df: pd.DataFrame, thumb_map: dict, overlay_map: dict) ->
             ws.write(4, col, col_name, header_fmt)
             ws.set_column(col, col, 20)
 
-        # Insert thumbnails (Original, Overlay) after existing columns
+        # Thumbnails (Original, Overlay)
         base_col = len(df.columns)
         ws.write(4, base_col, "Original", header_fmt)
         ws.write(4, base_col + 1, "Overlay", header_fmt)
@@ -145,7 +142,7 @@ def create_excel_report(df: pd.DataFrame, thumb_map: dict, overlay_map: dict) ->
 
         for i, row in df.iterrows():
             fn = row["Filename"]
-            r = 5 + i  # data starts at row 5 (0-based)
+            r = 5 + i
             if fn in thumb_map:
                 ws.insert_image(r, base_col, fn, {"image_data": io.BytesIO(thumb_map[fn]), "x_scale": 0.7, "y_scale": 0.7})
             if fn in overlay_map:
@@ -163,7 +160,11 @@ uploaded_files = st.sidebar.file_uploader(
 )
 grid_size = st.sidebar.slider("Grid Size", 2, 20, 10)
 sensitivity = st.sidebar.slider("Color Sensitivity (±RGB)", 5, 100, 40)
-fail_threshold = st.sidebar.slider("Coverage Pass Threshold", 0.5, 0.95, 0.5, help="Minimum coating coverage fraction per cell to pass.")
+fail_threshold = st.sidebar.slider(
+    "Coverage Pass Threshold",
+    0.5, 0.95, 0.5,
+    help="Minimum coating coverage fraction per cell to pass."
+)
 alpha = st.sidebar.slider("Overlay Opacity", 0.1, 0.9, 0.35)
 show_grid = st.sidebar.checkbox("Show Grid Lines", True)
 
@@ -187,11 +188,9 @@ if uploaded_files:
 
     centers = kmeans_colors(first_np, n_clusters=2)
     if color_mode == "Auto (darker cluster)":
-        # darker cluster as coating
         lum0, lum1 = luminance(centers[0]), luminance(centers[1])
         coating_rgb = centers[0] if lum0 < lum1 else centers[1]
     else:
-        # manual color picker -> hex to rgb
         hexval = manual_color.lstrip("#")
         coating_rgb = np.array([int(hexval[i:i+2], 16) for i in (0, 2, 4)], dtype=np.uint8)
 
@@ -216,12 +215,12 @@ if uploaded_files:
 
         overlay_img = draw_overlay(img_np, failure_cells, grid_size, alpha=alpha, show_grid=show_grid)
 
-        # Show visuals
-        col1, col2 = st.columns([1,1])
+        # Show visuals (no use_container_width to support Streamlit 1.35)
+        col1, col2 = st.columns([1, 1])
         with col1:
-            st.image(img_np, caption=f"{file.name} — Original", use_container_width=True)
+            st.image(img_np, caption=f"{file.name} — Original")
         with col2:
-            st.image(overlay_img, caption=f"{file.name} — Failure Overlay", use_container_width=True)
+            st.image(overlay_img, caption=f"{file.name} — Failure Overlay")
 
         # Metrics
         m1, m2, m3, m4 = st.columns(4)
@@ -232,7 +231,6 @@ if uploaded_files:
 
         # Save thumbnails for Excel
         thumb_map[file.name] = to_thumbnail(img)
-        # Save overlay thumbnail
         overlay_pil = Image.fromarray(overlay_img)
         overlay_map[file.name] = to_thumbnail(overlay_pil)
 
@@ -252,7 +250,7 @@ if uploaded_files:
     # Summary Table & Export
     df = pd.DataFrame(results)
     st.subheader("Summary")
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(df, use_container_width=True if "use_container_width" in st.dataframe.__code__.co_varnames else None)
 
     excel_bytes = create_excel_report(df, thumb_map, overlay_map)
     st.download_button(
