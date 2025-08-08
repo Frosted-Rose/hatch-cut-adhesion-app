@@ -150,116 +150,121 @@ def create_excel_report(df: pd.DataFrame, thumb_map: dict, overlay_map: dict) ->
     return output.getvalue()
 
 # =============================
-# Sidebar Controls
+# Sidebar (restructured)
 # =============================
-st.sidebar.header("Settings")
-uploaded_files = st.sidebar.file_uploader(
-    "Upload one or more hatch cut images",
-    type=["png", "jpg", "jpeg"],
-    accept_multiple_files=True
-)
+st.sidebar.header("Grid Size")
 grid_size = st.sidebar.slider("Grid Size", 2, 20, 10)
-sensitivity = st.sidebar.slider("Color Sensitivity (±RGB)", 5, 100, 40)
-fail_threshold = st.sidebar.slider(
-    "Coverage Pass Threshold",
-    0.5, 0.95, 0.5,
-    help="Minimum coating coverage fraction per cell to pass."
-)
-alpha = st.sidebar.slider("Overlay Opacity", 0.1, 0.9, 0.35)
-show_grid = st.sidebar.checkbox("Show Grid Lines", True)
 
+# Advanced options expander (everything else lives here)
+with st.sidebar.expander("Advanced options", expanded=False):
+    uploaded_files = st.file_uploader(
+        "Upload one or more hatch cut images",
+        type=["png", "jpg", "jpeg"],
+        accept_multiple_files=True
+    )
+    sensitivity = st.slider("Color Sensitivity (±RGB)", 5, 100, 40)
+    fail_threshold = st.slider(
+        "Coverage Pass Threshold",
+        0.5, 0.95, 0.5,
+        help="Minimum coating coverage fraction per cell to pass."
+    )
+    alpha = st.slider("Overlay Opacity", 0.1, 0.9, 0.35)
+    show_grid = st.checkbox("Show Grid Lines", True)
+    st.caption("Tip: Use consistent lighting for best KMeans color separation.")
+
+# Coating Color Selection (auto-detect two main colors)
 st.sidebar.subheader("Coating Color Selection")
-color_mode = st.sidebar.radio("Mode", ["Auto (darker cluster)", "Manual"], index=0)
-manual_color = st.sidebar.color_picker("Manual Color (RGB)", value="#555555")
+coating_rgb = None
+centers = None
+color_choice = None
 
-st.sidebar.caption("Tip: Use a consistent lighting setup for best KMeans color separation.")
+if 'uploaded_files' in locals() and uploaded_files:
+    # Determine 2 dominant colors from the first image
+    first_img = Image.open(uploaded_files[0]).convert("RGB")
+    first_np = np.array(first_img)
+    centers = kmeans_colors(first_np, n_clusters=2)
+    # Show the two swatches and let user pick which is the coating
+    c1, c2 = st.sidebar.columns(2)
+    with c1:
+        sw1 = np.full((40, 40, 3), centers[0], dtype=np.uint8)
+        st.image(sw1, caption=f"Color 1\nRGB {tuple(int(x) for x in centers[0])}")
+    with c2:
+        sw2 = np.full((40, 40, 3), centers[1], dtype=np.uint8)
+        st.image(sw2, caption=f"Color 2\nRGB {tuple(int(x) for x in centers[1])}")
+    color_choice = st.sidebar.radio(
+        "Select coating color",
+        options=[0, 1],
+        format_func=lambda i: f"Color {i+1} — RGB {tuple(int(x) for x in centers[i])}",
+        index=0
+    )
+    coating_rgb = centers[color_choice]
 
 # =============================
 # Main Pipeline
 # =============================
-if uploaded_files:
+if 'uploaded_files' in locals() and uploaded_files:
     results = []
     thumb_map = {}
     overlay_map = {}
 
-    # Determine coating color from the first image (or manual)
-    first_img = Image.open(uploaded_files[0]).convert("RGB")
-    first_np = np.array(first_img)
-
-    centers = kmeans_colors(first_np, n_clusters=2)
-    if color_mode == "Auto (darker cluster)":
-        lum0, lum1 = luminance(centers[0]), luminance(centers[1])
-        coating_rgb = centers[0] if lum0 < lum1 else centers[1]
+    if coating_rgb is None:
+        st.warning("Upload images and choose a coating color in the sidebar to begin.")
     else:
-        hexval = manual_color.lstrip("#")
-        coating_rgb = np.array([int(hexval[i:i+2], 16) for i in (0, 2, 4)], dtype=np.uint8)
+        for file in uploaded_files:
+            img = Image.open(file).convert("RGB")
+            img_np = np.array(img)
 
-    with st.expander("Detected Clusters (from first image)", expanded=False):
-        c1, c2 = st.columns(2)
-        with c1:
-            sw1 = np.full((50, 50, 3), centers[0], dtype=np.uint8)
-            st.image(sw1, caption=f"Cluster 1 RGB: {tuple(int(x) for x in centers[0])}", width=60)
-        with c2:
-            sw2 = np.full((50, 50, 3), centers[1], dtype=np.uint8)
-            st.image(sw2, caption=f"Cluster 2 RGB: {tuple(int(x) for x in centers[1])}", width=60)
-        st.markdown(f"**Using coating color:** {tuple(int(x) for x in coating_rgb)}")
+            mask = build_mask(img_np, coating_rgb, sensitivity)
+            failure_cells, total_cells = analyze_grid(mask, grid_size, fail_threshold=fail_threshold)
+            fail_pct = (len(failure_cells) / total_cells) * 100.0
 
-    # Process each image
-    for file in uploaded_files:
-        img = Image.open(file).convert("RGB")
-        img_np = np.array(img)
+            overlay_img = draw_overlay(img_np, failure_cells, grid_size, alpha=alpha, show_grid=show_grid)
 
-        mask = build_mask(img_np, coating_rgb, sensitivity)
-        failure_cells, total_cells = analyze_grid(mask, grid_size, fail_threshold=fail_threshold)
-        fail_pct = (len(failure_cells) / total_cells) * 100.0
+            # Show visuals
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                st.image(img_np, caption=f"{file.name} — Original")
+            with col2:
+                st.image(overlay_img, caption=f"{file.name} — Failure Overlay")
 
-        overlay_img = draw_overlay(img_np, failure_cells, grid_size, alpha=alpha, show_grid=show_grid)
+            # Metrics
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Failure %", f"{fail_pct:.2f}%")
+            m2.metric("ASTM Grade", astm_grade(fail_pct))
+            m3.metric("ISO Grade", iso_grade(fail_pct))
+            m4.metric("Failed Cells", f"{len(failure_cells)}/{total_cells}")
 
-        # Show visuals (no use_container_width to support Streamlit 1.35)
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            st.image(img_np, caption=f"{file.name} — Original")
-        with col2:
-            st.image(overlay_img, caption=f"{file.name} — Failure Overlay")
+            # Save thumbnails for Excel
+            thumb_map[file.name] = to_thumbnail(img)
+            overlay_pil = Image.fromarray(overlay_img)
+            overlay_map[file.name] = to_thumbnail(overlay_pil)
 
-        # Metrics
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Failure %", f"{fail_pct:.2f}%")
-        m2.metric("ASTM Grade", astm_grade(fail_pct))
-        m3.metric("ISO Grade", iso_grade(fail_pct))
-        m4.metric("Failed Cells", f"{len(failure_cells)}/{total_cells}")
+            # Aggregate results
+            results.append({
+                "Filename": file.name,
+                "Failure %": round(fail_pct, 2),
+                "ASTM Grade": astm_grade(fail_pct),
+                "ISO Grade": iso_grade(fail_pct),
+                "Grid Size": grid_size,
+                "Sensitivity (±RGB)": sensitivity,
+                "Coverage Threshold": fail_threshold,
+            })
 
-        # Save thumbnails for Excel
-        thumb_map[file.name] = to_thumbnail(img)
-        overlay_pil = Image.fromarray(overlay_img)
-        overlay_map[file.name] = to_thumbnail(overlay_pil)
+            st.divider()
 
-        # Aggregate results
-        results.append({
-            "Filename": file.name,
-            "Failure %": round(fail_pct, 2),
-            "ASTM Grade": astm_grade(fail_pct),
-            "ISO Grade": iso_grade(fail_pct),
-            "Grid Size": grid_size,
-            "Sensitivity (±RGB)": sensitivity,
-            "Coverage Threshold": fail_threshold,
-        })
+        # Summary Table & Export
+        df = pd.DataFrame(results)
+        st.subheader("Summary")
+        st.dataframe(df)  # compatible with Streamlit 1.35.0
 
-        st.divider()
+        excel_bytes = create_excel_report(df, thumb_map, overlay_map)
+        st.download_button(
+            label="💾 Download Excel Report",
+            data=excel_bytes,
+            file_name="hatch_cut_results_pro.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
-    # Summary Table & Export
-    df = pd.DataFrame(results)
-    st.subheader("Summary")
-    st.dataframe(df)  # compatible with Streamlit 1.35.0
-
-    excel_bytes = create_excel_report(df, thumb_map, overlay_map)
-    st.download_button(
-        label="💾 Download Excel Report",
-        data=excel_bytes,
-        file_name="hatch_cut_results_pro.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
-    st.caption("Done. Review the overlay to ensure the selected coating color and sensitivity isolate coating regions correctly.")
+        st.caption("Done. Review the overlay to ensure the selected coating color and sensitivity isolate coating regions correctly.")
 else:
-    st.info("👆 Upload one or more images to begin. PNG or JPEG are supported.")
+    st.info("👆 Open **Advanced options** in the sidebar to upload images. Then pick the coating color above.")
