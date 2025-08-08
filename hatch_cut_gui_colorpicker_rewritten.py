@@ -79,7 +79,7 @@ def analyze_grid(mask: np.ndarray, grid_size: int, fail_threshold: float = 0.5):
             x1, x2 = j*cell_w, (j+1)*cell_w if j < grid_size-1 else W
             cell = mask[y1:y2, x1:x2]
             fill_ratio = cv2.countNonZero(cell) / float(cell.size)
-            failed = (fill_ratio < (1.0 - fail_threshold))  # if coating coverage is low, mark failed
+            failed = (fill_ratio < (1.0 - fail_threshold))  # low coating coverage -> fail
             if failed:
                 failure_cells.append((x1, y1, x2, y2))
     total_cells = grid_size * grid_size
@@ -250,7 +250,7 @@ if uploaded_files:
     # Summary Table & Export
     df = pd.DataFrame(results)
     st.subheader("Summary")
-    st.dataframe(df, use_container_width=True if "use_container_width" in st.dataframe.__code__.co_varnames else None)
+    st.dataframe(df)  # compatible with Streamlit 1.35.0
 
     excel_bytes = create_excel_report(df, thumb_map, overlay_map)
     st.download_button(
