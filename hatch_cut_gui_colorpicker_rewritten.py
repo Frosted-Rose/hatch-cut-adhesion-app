@@ -11,7 +11,7 @@ import xlsxwriter
 # =============================
 # App Config & Styling
 # =============================
-st.set_page_config(page_title="Hatch Cut Adhesion Analyzer (Pro)", layout="wide")
+st.set_page_config(page_title="Hatch Cut Adhesion Analyzer", layout="wide")
 st.markdown(
     """
     <style>
@@ -22,7 +22,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-st.title("Hatch Cut Adhesion Analyzer — Pro")
+st.title("Hatch Cut Adhesion Analyzer")
 st.caption("Batch-process hatch cut images, visualize failure cells, and export a clean Excel report.")
 
 # =============================
@@ -267,4 +267,4 @@ if 'uploaded_files' in locals() and uploaded_files:
 
         st.caption("Done. Review the overlay to ensure the selected coating color and sensitivity isolate coating regions correctly.")
 else:
-    st.info("👆 Open **Advanced options** in the sidebar to upload images. Then pick the coating color above.")
+    st.info("To move uploading of images to main page")
