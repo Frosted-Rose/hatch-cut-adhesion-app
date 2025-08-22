@@ -22,7 +22,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-st.title("Hatch Cut Adhesion Analyzer")
+st.title("Hatch Cut Adhesion Analyzer+NICHOLAS CHU")
 st.caption("Batch-process hatch cut images, visualize failure cells, and export a clean Excel report.")
 
 # =============================
