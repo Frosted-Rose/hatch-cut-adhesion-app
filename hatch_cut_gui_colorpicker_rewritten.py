@@ -267,7 +267,7 @@ if uploaded_files and (coating_rgb is not None):
     st.download_button(
         label="💾 Download Excel Report",
         data=excel_bytes,
-        file_name="hatch_cut_results_pro.xlsx",
+        file_name="hatch_cut_results_bobwashere.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
