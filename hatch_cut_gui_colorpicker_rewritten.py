@@ -272,3 +272,5 @@ if uploaded_files and (coating_rgb is not None):
     )
 
     st.caption("Done. Review the overlay to ensure the selected coating color and sensitivity isolate coating regions correctly.")
+
+    st.caption("Bob was here :)")
